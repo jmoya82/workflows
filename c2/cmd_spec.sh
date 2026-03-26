@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+# new
+NEW_C2_DESCRIPTION="Creates a NVIDIA Collective Communications Library (NCCL) project"
+NEW_C2_FLAGS=(
+  "name,n,Project name,-,-"
+  "push,p,Push to GitHub,0|1,1"
+)
+NEW_C2_FLAGS_MANDATORY="name,push"
+
+# build
+BUILD_C2_DESCRIPTION="Builds your nccl project"
+BUILD_C2_FLAGS=(
+  "name,n,Project name,-,-"
+)
+BUILD_C2_FLAGS_MANDATORY="name"
+
+# delete
+DELETE_C2_DESCRIPTION="Deletes a nccl project"
+DELETE_C2_FLAGS=(
+  "name,n,Project name,-,-"
+)
+DELETE_C2_FLAGS_MANDATORY="name"
+
+# program
+PROGRAM_C2_DESCRIPTION="Programs your nccl project to a specified device"
+PROGRAM_C2_FLAGS=(
+  "name,n,Project name,-,-"
+  "device,d,Device index,-,-"
+)
+PROGRAM_C2_FLAGS_MANDATORY="name,device"
+
+# run
+RUN_C2_DESCRIPTION="Runs your nccl project"
+RUN_C2_FLAGS=(
+  "name,n,Project name,-,-"
+)
+RUN_C2_FLAGS_MANDATORY="name"
+
+# validate
+VALIDATE_C2_DESCRIPTION="NVIDIA Collective Communications Library (NCCL) validation"
+VALIDATE_C2_FLAGS=(
+  "devices,d,Comma-separated list of device indices,-,-"
+  "nthreads,t,Threads per process,1-64,1"
+  "minbytes,b,Minimum message size,1B|4K|8M|1G,8M"
+  "maxbytes,e,Maximum message size,1B|4K|1G|16G,1G"
+  "iters,n,Timed iterations,1-1000,20"
+  "datatype,d,Specify which datatype to use,int8|half|bfloat16|float,float"
+  "stepfactor,f,Multiplication factor between sizes,2|4|8,2"
+)
+VALIDATE_C2_FLAGS_MANDATORY="devices,minbytes,maxbytes"
