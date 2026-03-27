@@ -25,7 +25,7 @@ CMDB_PATH="$(eval echo "$("$ODEV_PATH/src/read_yml.py" --db "$ODEV_PATH/constant
 COLOR_OREOL=$($ODEV_PATH/src/color_get.sh $ODEV_PATH COLOR_OREOL)
 LOCAL_TEST="1"
 PROJECTS_PATH="$(eval echo "$("$ODEV_PATH/src/read_yml.py" --db "$ODEV_PATH/constants.yml" paths projects)")"
-VALIDATION_PROJECT_PATH="$PROJECTS_PATH/validate.$COMMAND.$hostname"
+VALIDATION_PROJECT_PATH="$PROJECTS_PATH/$COMMAND.$SUBCOMMAND.$hostname"
 
 # check on users
 # ...
@@ -34,6 +34,14 @@ VALIDATION_PROJECT_PATH="$PROJECTS_PATH/validate.$COMMAND.$hostname"
 installed="$("$ODEV_PATH/src/required_tools_print.sh" "$ODEV_PATH" "nvidia-smi")"
 if [[ "$installed" == "0" ]]; then
   echo "Missing tool: $tool"
+fi
+
+# set projects folder
+if [[ ! -d "$PROJECTS_PATH" ]]; then
+  mkdir -p "$PROJECTS_PATH"
+  cp "$ODEV_PATH/src/github_push.sh" "$PROJECTS_PATH"
+  cp "$ODEV_PATH/src/git_diff.sh" "$PROJECTS_PATH"
+  chmod +x "$PROJECTS_PATH/github_push.sh" "$PROJECTS_PATH/git_diff.sh"
 fi
 
 # set KEY
