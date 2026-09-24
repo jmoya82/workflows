@@ -33,7 +33,8 @@ VALIDATION_PROJECT_PATH="$PROJECTS_PATH/$COMMAND.$SUBCOMMAND.$hostname"
 # check on tools
 installed="$("$ODEV_PATH/src/required_tools_print.sh" "$ODEV_PATH" "nvidia-smi")"
 if [[ "$installed" == "0" ]]; then
-  echo "Missing tool: $tool"
+  echo "Missing tool: nvidia-smi"
+  exit 1
 fi
 
 # set projects folder
