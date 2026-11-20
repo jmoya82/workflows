@@ -1,5 +1,5 @@
 <p align="right">
-<a href="https://oreol.ch">Oreol</a> <a href="https://github.com/oreolag/cli/tree/main">CLI</a>
+<a href="https://github.com/oreolag/cli/tree/main">CLI</a>
 </p>
 
 <h1 align="center">
