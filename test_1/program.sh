@@ -1,0 +1,124 @@
+#!/bin/bash
+
+# example: odev program test_1
+
+# get script location
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SUBCOMMAND="$(basename "${BASH_SOURCE[0]}" .sh)"
+
+# derive from SCRIPT_DIR
+CLI_NAME="odev"
+COMMAND="$(basename "$SCRIPT_DIR")"
+ODEV_PATH="${ODEV_PATH:-"$(dirname "$SCRIPT_DIR")"}"
+
+# get hostname
+url="${HOSTNAME}"
+hostname="${url%%.*}"
+
+# format
+bold=$(tput bold)
+italic=$(tput sitm 2>/dev/null || true)
+normal=$(tput sgr0)
+
+# constants
+CMDB_PATH="$(eval echo "$("$ODEV_PATH/src/read_yml.py" --db "$ODEV_PATH/vars.yml" paths cmdb)")"
+MGMT_PATH="$(eval echo "$("$ODEV_PATH/src/read_yml.py" --db "$ODEV_PATH/vars.yml" paths mgmt)")"
+PROJECTS_PATH="$(python3 "$ODEV_PATH/src/odev_path.py" projects)" || exit 1
+INVENTORY_PATH="$(eval echo "$("$ODEV_PATH/src/read_yml.py" --db "$ODEV_PATH/vars.yml" paths inventory)")"
+WORKFLOWS_PATH="$ODEV_PATH/submodules/workflows"
+WORKFLOWS_USER_PATH="$(python3 "$ODEV_PATH/src/odev_path.py" workflows)" || exit 1
+
+# check on users
+# ...
+
+# check on tools
+# ...
+
+# set KEY
+KEY="$(printf '%s_%s' "$COMMAND" "$SUBCOMMAND" | tr '[:lower:]' '[:upper:]')"
+
+# get cmd_spec.sh path
+target="$(readlink -f "${BASH_SOURCE[0]}")"
+CMD_SPEC_PATH="$(dirname "$target")"
+
+# read command description, command flags, and mandatory flags
+command_description="$("$ODEV_PATH/src/cmd_description_read.sh" "$ODEV_PATH" "$KEY" --db "$CMD_SPEC_PATH/cmd_spec.sh")"
+mapfile -t flags < <("$ODEV_PATH/src/cmd_flags_read.sh" "$ODEV_PATH" "$KEY" --db "$CMD_SPEC_PATH/cmd_spec.sh")
+mandatory_flags="$("$ODEV_PATH/src/cmd_mandatory_flags_read.sh" "$ODEV_PATH" "$KEY" --db "$CMD_SPEC_PATH/cmd_spec.sh")"
+
+# (maybe) print help
+print_range="0"
+print_default="0"
+print_both="0"
+"$ODEV_PATH/src/cmd_help_print.sh" --maybe \
+  "$CLI_NAME" "$COMMAND" "$SUBCOMMAND" "$command_description" \
+  "$print_range" "$print_default" "$print_both" \
+  "${flags[@]}" -- "$@" && exit 0 || true
+
+# parse flags
+parsed_flags="$("$ODEV_PATH/src/cmd_parse.sh" --params "${flags[@]}" -- "$@")" || exit 1
+
+# run interactive prompt
+parsed_flags="$("$ODEV_PATH/src/cmd_prompt.sh" --required "$mandatory_flags" --params "${flags[@]}" -- "$parsed_flags")" || exit 1
+
+# read flags
+if [[ -n "$parsed_flags" ]]; then
+  declare -A V
+  while IFS='=' read -r k v; do
+    V["$k"]="$v"
+  done <<< "$parsed_flags"
+fi
+
+# assign flags
+devices=${V[devices]}
+name=${V[name]}
+hosts=${V[hosts]:-local}
+
+# replace spaces with "_"
+name="${name// /_}"
+
+# check on flags
+# ...
+
+# check on devices
+if [[ ! "$devices" =~ ^[0-9]+(,\ ?[0-9]+)*$ ]]; then
+    echo "Invalid devices format: $devices"
+    exit 1
+fi
+
+# convert devices to an array
+devices_array=$(echo "$devices" | tr -d ' ')
+IFS=',' read -ra devices_array <<< "$devices_array"
+
+# remove duplicates
+mapfile -t devices_array < <(printf "%s\n" "${devices_array[@]}" | awk '!seen[$0]++')
+
+# device loop
+for d in "${devices_array[@]}"; do
+  name_system="A"
+  name_cmdb="A"
+  if [[ "$name_system" != "$name_cmdb" ]]; then
+    echo "Invalid device index: $d"
+    exit 1
+  fi
+done
+
+# set command flags
+# ...
+
+# derived
+# ...
+
+# check if exists
+if [[ ! -d "$PROJECTS_PATH/$SUBCOMMAND/$name" ]]; then
+  echo "Project does not exist: $name"
+  exit 1
+fi
+
+# refresh and use the user's generated inventory
+"$ODEV_PATH/src/get_ansible_hosts.sh" "$(id -un)" || exit 1
+inventory_file="$INVENTORY_PATH/hosts_$(id -un)"
+playbook="$WORKFLOWS_USER_PATH/$SUBCOMMAND/program.yml"
+
+# run the playbook on the selected hosts (add your code here!)
+exec "$MGMT_PATH/ansible-play.sh" "$playbook" "$hosts" -i "$inventory_file"
